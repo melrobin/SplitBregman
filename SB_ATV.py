@@ -1,3 +1,5 @@
+import numpy as np
+import scipy.sparse as sp
 '''
  Split Bregman Anisotropic Total Variation Denoising
 
@@ -27,25 +29,25 @@ def SB_ATV(g,mu):
     err = 1
     k = 1
     tol = 1e-3
-    lambda = 1
+    lambda1 = 1 #Avoid using lambda because it is a keyword in Python
     while err > tol:
-        fprintf('it. %g ',k);
-        up = u;
-        [u,~] = cgs(speye(n)+BtB, g-lambda*Bt*(b-d),1e-5,100); 
-        Bub = B*u+b;
-        d = max(abs(Bub)-mu/lambda,0).*sign(Bub);
-        b = Bub-d;
-        err = norm(up-u)/norm(u);
-        fprintf('err=%g \n',err);
-        k = k+1;
+        print 'it. %g ',k
+        up = u
+        u,_ = sp.linalg.cg(sp.eye(n)+BtB, g-lambda1*Bt*(b-d),tol=1e-5,maxiter=100)
+        Bub = B*u+b
+        d = max(np.abs(Bub)-mu/lambda1,0)*np.sign(Bub)
+        b = Bub-d
+        err = np.linalg.norm(up-u)/np.linalg.norm(u)
+        print 'err=%g \n',err
+        k = k+1
     print 'Stopped because norm(up-u)/norm(u) <= tol=%.1e\n',tol
     return u
 
 def DiffOper(N):
-    D = spdiags([-ones(N,1) ones(N,1)], [0 1], N,N+1);
-    D(:,1) = [];
-    D(1,1) = 0;
-    B = [ kron(speye(N),D) ; kron(D,speye(N)) ];
+    D = sp.diags([-np.ones(N,1),np.ones(N,1)], [0 1], N,N+1)
+    D[:,1] = []
+    D[1,1] = 0
+    B = [[ np.kron(sp.eye(N),D)],[ np.kron(D,sp.eye(N))]]
     Bt = np.tranpose(B)
     BtB = Bt*B
     return B,Bt,BtB 
