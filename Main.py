@@ -12,12 +12,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import pdb
-import SB_ATV
+from split_bregman import SB_ATV
 # Load an color image in grayscale
 N = 512
 n = N*N
 f = cv2.imread('Lena512.png',0)
-print f.shape
 #g = f(:) + 0.09*max(f(:))*randn(n,1);
 g=f.flatten()+0.09*np.amax(f.flatten())*np.random.randn(n)
 mu = 20;

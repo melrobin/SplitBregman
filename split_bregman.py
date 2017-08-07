@@ -1,4 +1,5 @@
 import numpy as np
+import scipy
 import scipy.sparse as sp
 '''
  Split Bregman Anisotropic Total Variation Denoising
@@ -22,7 +23,7 @@ import scipy.sparse as sp
 def SB_ATV(g,mu):
     g = g.flatten()
     n = len(g)
-    B,Bt,BtB = DiffOper(sqrt(n))
+    B,Bt,BtB = DiffOper(np.sqrt(n))
     b = np.zeros(2*n,1)
     d = b
     u = g
@@ -43,10 +44,30 @@ def SB_ATV(g,mu):
     print 'Stopped because norm(up-u)/norm(u) <= tol=%.1e\n',tol
     return u
 
+def delete_row_csr(mat, i):
+    if not isinstance(mat, scipy.sparse.csr_matrix):
+        raise ValueError("works only for CSR format -- use .tocsr() first")
+    n = mat.indptr[i+1] - mat.indptr[i]
+    if n > 0:
+        mat.data[mat.indptr[i]:-n] = mat.data[mat.indptr[i+1]:]
+        mat.data = mat.data[:-n]
+        mat.indices[mat.indptr[i]:-n] = mat.indices[mat.indptr[i+1]:]
+        mat.indices = mat.indices[:-n]
+    mat.indptr[i:-1] = mat.indptr[i+1:]
+    mat.indptr[i:] -= n
+    mat.indptr = mat.indptr[:-1]
+    mat._shape = (mat._shape[0]-1, mat._shape[1])
+
 def DiffOper(N):
-    D = sp.diags([-np.ones(N,1),np.ones(N,1)],[0,1], N,N+1)
-    D[:,1] = []
-    D[1,1] = 0
+    D = sp.spdiags(np.transpose(np.hstack((-np.ones((N,1)),np.ones((N,1))))),[0,1], N,N+1)
+    #D[:,1] = []
+    print 'shape before: ',D.shape
+    delete_row_csr(D,0)
+    #D=np.delete(D,0,1) #delete the first column
+    print 'shape afterward: ',D.shape
+    #D=sp.csr_matrix(D)
+    D[0,0] = 0
+    #D[1,1] = 0
     B = [[ np.kron(sp.eye(N),D)],[ np.kron(D,sp.eye(N))]]
     Bt = np.tranpose(B)
     BtB = Bt*B
