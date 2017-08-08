@@ -1,6 +1,8 @@
 import numpy as np
+import pdb
 import scipy
 import scipy.sparse as sp
+import scipy.sparse.linalg as splinalg
 '''
  Split Bregman Anisotropic Total Variation Denoising
 
@@ -24,7 +26,7 @@ def SB_ATV(g,mu):
     g = g.flatten()
     n = len(g)
     B,Bt,BtB = DiffOper(np.sqrt(n))
-    b = np.zeros(2*n,1)
+    b = np.zeros((2*n,1))
     d = b
     u = g
     err = 1
@@ -34,7 +36,8 @@ def SB_ATV(g,mu):
     while err > tol:
         print 'it. %g ',k
         up = u
-        u,_ = sp.linalg.cg(sp.eye(n)+BtB, g-lambda1*Bt*(b-d),tol=1e-5,maxiter=100)
+        pdb.set_trace()
+        u,_ = splinalg.cg(sp.eye(n)+BtB, g-lambda1*Bt*(b-d),tol=1e-5,maxiter=100)
         Bub = B*u+b
         d = max(np.abs(Bub)-mu/lambda1,0)*np.sign(Bub)
         b = Bub-d
@@ -43,6 +46,21 @@ def SB_ATV(g,mu):
         k = k+1
     print 'Stopped because norm(up-u)/norm(u) <= tol=%.1e\n',tol
     return u
+
+def delete_row_lil(mat, i):
+    if not isinstance(mat, scipy.sparse.lil_matrix):
+        raise ValueError("works only for LIL format -- use .tolil() first")
+    mat.rows = np.delete(mat.rows, i)
+    mat.data = np.delete(mat.data, i)
+    mat._shape = (mat._shape[0] - 1, mat._shape[1])
+
+def delete_col_lil(mat, i):
+    if not isinstance(mat, scipy.sparse.lil_matrix):
+        raise ValueError("works only for LIL format -- use .tolil() first")
+    mat.cols = np.delete(mat.rows, i)
+    mat.data = np.delete(mat.data, i)
+    mat._shape = (mat._shape[0],mat._shape[1]- 1)
+
 
 def delete_row_csr(mat, i):
     if not isinstance(mat, scipy.sparse.csr_matrix):
@@ -59,16 +77,17 @@ def delete_row_csr(mat, i):
     mat._shape = (mat._shape[0]-1, mat._shape[1])
 
 def DiffOper(N):
-    D = sp.spdiags(np.transpose(np.hstack((-np.ones((N,1)),np.ones((N,1))))),[0,1], N,N+1)
+    D = sp.spdiags(np.transpose(np.hstack((-np.ones((N,1)),np.ones((N,1))))),[0,1], N,N+1,"csr")
     #D[:,1] = []
     print 'shape before: ',D.shape
-    delete_row_csr(D,0)
+    D=D[:,1:]
     #D=np.delete(D,0,1) #delete the first column
     print 'shape afterward: ',D.shape
     #D=sp.csr_matrix(D)
     D[0,0] = 0
     #D[1,1] = 0
-    B = [[ np.kron(sp.eye(N),D)],[ np.kron(D,sp.eye(N))]]
-    Bt = np.tranpose(B)
+    B = sp.hstack([sp.kron(sp.eye(N),D),sp.kron(D,sp.eye(N))])
+
+    Bt = B.transpose()
     BtB = Bt*B
     return B,Bt,BtB 
