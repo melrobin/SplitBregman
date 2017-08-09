@@ -34,15 +34,15 @@ def SB_ATV(g,mu):
     tol = 1e-3
     lambda1 = 1 #Avoid using lambda because it is a keyword in Python
     while err > tol:
-        print 'it. %g ',k
+        print 'it. %d '%k,
         up = u
-        pdb.set_trace()
-        u,_ = splinalg.cg(sp.eye(n)+BtB, g-lambda1*Bt*(b-d),tol=1e-5,maxiter=100)
-        Bub = B*u+b
-        d = max(np.abs(Bub)-mu/lambda1,0)*np.sign(Bub)
+        u,_ = splinalg.cg(sp.eye(n)+BtB,g-np.squeeze(lambda1*Bt.dot(b-d)),tol=1e-5,maxiter=100)
+        Bub = B*u+np.squeeze(b)
+        print np.linalg.norm(Bub),
+        d = np.amax(np.abs(Bub)-mu/lambda1,0)*np.sign(Bub)
         b = Bub-d
         err = np.linalg.norm(up-u)/np.linalg.norm(u)
-        print 'err=%g \n',err
+        print 'err=%g'%err
         k = k+1
     print 'Stopped because norm(up-u)/norm(u) <= tol=%.1e\n',tol
     return u
@@ -86,8 +86,10 @@ def DiffOper(N):
     #D=sp.csr_matrix(D)
     D[0,0] = 0
     #D[1,1] = 0
-    B = sp.hstack([sp.kron(sp.eye(N),D),sp.kron(D,sp.eye(N))])
-
-    Bt = B.transpose()
+    print 'D dimensions: ',D.shape
+    B = sp.vstack([sp.kron(sp.eye(N),D),sp.kron(D,sp.eye(N))],"csr")
+    Bt = B.transpose().tocsr()
     BtB = Bt*B
+    print 'BtB dimensions: ',BtB.shape
+    
     return B,Bt,BtB 
