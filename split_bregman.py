@@ -77,7 +77,9 @@ def delete_row_csr(mat, i):
     mat._shape = (mat._shape[0]-1, mat._shape[1])
 
 def DiffOper(N):
-    D = sp.spdiags(np.transpose(np.hstack((-np.ones((N,1)),np.ones((N,1))))),[0,1], N,N+1,"csr")
+    data=np.vstack([-np.ones((1,N)),np.ones((1,N))])
+    D = sp.diags(data,[0,1],(N,N+1),"csr")
+    #D = sp.spdiags(np.vstack([-np.ones((1,N)),np.ones((1,N))]),[0,1],(N,N+1),"csr")
     #D[:,1] = []
     print 'shape before: ',D.shape
     D=D[:,1:]
@@ -91,5 +93,5 @@ def DiffOper(N):
     Bt = B.transpose().tocsr()
     BtB = Bt*B
     print 'BtB dimensions: ',BtB.shape
-    
+    print 'Returned' 
     return B,Bt,BtB 
