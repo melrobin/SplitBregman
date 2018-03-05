@@ -29,8 +29,11 @@ lambda = 1;
 while err > tol
     fprintf('it. %g ',k);
     up = u;
+  %  size(speye(n))
+  %  size(BtB)
     [u,~] = cgs(speye(n)+BtB, g-lambda*Bt*(b-d),1e-5,100); 
     Bub = B*u+b;
+    fprintf(' %g ', norm(Bub))
     d = max(abs(Bub)-mu/lambda,0).*sign(Bub);
     b = Bub-d;
     err = norm(up-u)/norm(u);
@@ -45,6 +48,8 @@ D = spdiags([-ones(N,1) ones(N,1)], [0 1], N,N+1);
 D(:,1) = [];
 D(1,1) = 0;
 B = [ kron(speye(N),D) ; kron(D,speye(N)) ];
+7
+size(B)
 Bt = B';
 BtB = Bt*B;
 end
