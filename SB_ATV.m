@@ -34,7 +34,7 @@ while err > tol
     [u,~] = cgs(speye(n)+BtB, g-lambda*Bt*(b-d),1e-5,100); 
     Bub = B*u+b;
     fprintf(' %g ', norm(Bub))
-    d = max(abs(Bub)-mu/lambda,0).*sign(Bub);
+    d = max(abs(Bub)-mu/lambda,1).*sign(Bub);
     b = Bub-d;
     err = norm(up-u)/norm(u);
     fprintf('err=%g \n',err);
@@ -48,7 +48,6 @@ D = spdiags([-ones(N,1) ones(N,1)], [0 1], N,N+1);
 D(:,1) = [];
 D(1,1) = 0;
 B = [ kron(speye(N),D) ; kron(D,speye(N)) ];
-7
 size(B)
 Bt = B';
 BtB = Bt*B;

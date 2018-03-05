@@ -23,7 +23,7 @@ def SB_ATV(g, mu):
         u, _ = splinalg.cg(sp.eye(n) + BtB, g - np.squeeze(lambda1 * Bt.dot(b - d)), tol=1e-05, maxiter=100)
         Bub = B * u + np.squeeze(b)
         print np.linalg.norm(Bub),
-        d = np.amax(np.abs(Bub) - mu / lambda1, 0) * np.sign(Bub)
+        d = np.maximum(np.abs(Bub) - mu / lambda1,0) * np.sign(Bub)
         b = Bub - d
         err = np.linalg.norm(up - u) / np.linalg.norm(u)
         print 'err=%g' % err

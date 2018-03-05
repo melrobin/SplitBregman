@@ -13,7 +13,7 @@ close all;
 
 N = 512; n = N^2;
 f = double(imread('Lena512','png'));
-g = f(:) + 0.09*max(f(:))*randn(n,1);
+g = f(:) %+ 0.09*max(f(:))*randn(n,1);
 
 mu = 20;
 
