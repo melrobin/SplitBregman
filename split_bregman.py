@@ -6,6 +6,33 @@
 # Compiled at: 2018-03-04 17:52:02
 import numpy as np, pdb, scipy, scipy.sparse as sp, scipy.sparse.linalg as splinalg
 
+def SB_ITV(g, mu):
+     g = g.flatten('F')
+     n = len(g)
+     B, Bt, BtB = DiffOper(int(np.sqrt(n)))
+     b = np.zeros((2*n,1))
+     d = b
+     u = g
+     err = 1
+     k = 1
+     tol = 0.001
+     lambda1 = 1
+     while err > tol:
+        print 'it. %g '% k,
+        up = u
+        u,_=sp.linalg.cg(sp.eye(n)+BtB,g-np.squeeze(lambda1*Bt.dot(b-d)),tol=1e-5, maxiter=100)
+        Bub = B.dot(u) + np.squeeze(b)
+        s = np.sqrt(Bub[:n]**2 + Bub[n:]**2)
+        if s[0]==0.:
+            s[0]=1.
+        d = np.concatenate((np.maximum(s-mu/lambda1,0.)*Bub[:n]/s,np.maximum(s-mu/lambda1,0.)*Bub[n:]/s))
+        b = Bub - d
+        err = np.linalg.norm(up - u) / np.linalg.norm(u)
+        print 'err=%g \n'% err,
+        k = k + 1
+     print 'Stopped because norm(up-u)/norm(u) <= tol=%.1e\n'% tol
+     return u
+
 def SB_ATV(g, mu):
     g = g.flatten()
     n = len(g)
@@ -29,7 +56,7 @@ def SB_ATV(g, mu):
         print 'err=%g' % err
         k = k + 1
 
-    print 'Stopped because norm(up-u)/norm(u) <= tol=%.1e\n', tol
+    print 'Stopped because norm(up-u)/norm(u) <= tol=%.1e\n'% tol
     return u
 
 
@@ -67,15 +94,14 @@ def delete_row_csr(mat, i):
 def DiffOper(N):
     data = np.vstack([-np.ones((1, N)), np.ones((1, N))])
     D = sp.diags(data, [0, 1], (N, N + 1), 'csr')
-    print 'shape before: ', D.shape
+    #print 'shape before: ', D.shape
     D = D[:, 1:]
-    print 'shape afterward: ', D.shape
+    #print 'shape afterward: ', D.shape
     D[(0, 0)] = 0
-    print 'D dimensions: ', D.shape
+    #print 'D dimensions: ', D.shape
     B = sp.vstack([sp.kron(sp.eye(N), D), sp.kron(D, sp.eye(N))], 'csr')
     Bt = B.transpose().tocsr()
     BtB = Bt * B
-    print 'BtB dimensions: ', BtB.shape
-    print 'Returned'
-    return (
-     B, Bt, BtB)
+    #print 'BtB dimensions: ', BtB.shape
+    #print 'Returned'
+    return B, Bt, BtB
